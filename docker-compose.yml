@@ -1,0 +1,31 @@
+services:
+  dashboard:
+    build: .
+    env_file:
+      - .env
+    environment:
+      # Belt-and-braces default so the container's internal uvicorn port always matches the
+      # host-side mapping below, even if APP_PORT is left unset in .env.
+      APP_PORT: ${APP_PORT:-8080}
+    ports:
+      - "${APP_PORT:-8080}:${APP_PORT:-8080}"
+    volumes:
+      # Read-only mount for a service-account key file — only actually used when .env sets
+      # BQ_AUTH_MODE=service_account and GOOGLE_APPLICATION_CREDENTIALS=/secrets/key.json.
+      # Harmless to mount unconditionally otherwise (compose has no conditional-mount syntax).
+      - ./secrets:/secrets:ro
+    dns:
+      # Pin external resolvers rather than relying on Docker Desktop's embedded DNS proxy
+      # forwarding correctly — that proxy occasionally fails to resolve external hosts (e.g.
+      # oauth2.googleapis.com, needed for every BigQuery auth refresh) right after the VM
+      # restarts, a VPN connects/disconnects, or the host network changes, even though the
+      # host itself resolves fine. Restarting Docker Desktop also clears it, but costs more.
+      - 8.8.8.8
+      - 1.1.1.1
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,os; urllib.request.urlopen(f'http://localhost:{os.environ.get(\"APP_PORT\",\"8080\")}/api/meta/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
