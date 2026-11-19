@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block body %}
+<div id="app"
+     data-cluster-name="{{ cluster_name }}"
+     data-auto-refresh-seconds="{{ auto_refresh_seconds }}"
+     data-node-trend-days-back="{{ node_trend_days_back }}"
+     data-app-history-default-days="{{ app_history_default_days }}"
+     data-app-uptime-default-days="{{ app_uptime_default_days }}">
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="brand">StriimWatcher Dashboard</span>
+      <span id="cluster-name-badge" class="chip">—</span>
+    </div>
+    <div class="topbar-right">
+      <span id="last-updated" class="muted">Loading…</span>
+      <label class="field toggle">
+        <input type="checkbox" id="auto-refresh-toggle" checked>
+        Auto-refresh
+      </label>
+      <button id="refresh-now" class="btn">Refresh now</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="node-health">Node Health</button>
+    <button class="tab-btn" data-tab="applications">Applications</button>
+    <button class="tab-btn" data-tab="history">History &amp; Trends</button>
+  </nav>
+
+  <main>
+    <!-- ===== Tab 1: Node Health ===== -->
+    <section id="tab-node-health" class="tab-panel active">
+      <div class="filter-row">
+        <label class="field">
+          Lookback
+          <select id="node-range">
+            <option value="1">Last 1 day</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </label>
+        <span class="hint">Widen this if a cluster hasn't polled recently — a window shorter than the actual gap since the last poll shows as empty, not stale.</span>
+      </div>
+
+      <h2>Summary</h2>
+      <div id="node-summary-stats" class="stat-row"></div>
+
+      <h2>Node detail</h2>
+      <div class="table-wrap">
+        <table id="node-table">
+          <thead>
+            <tr>
+              <th>Node</th><th>Status</th><th>CPU (per-core)</th>
+              <th>Free mem</th><th>Striim version</th><th>Uptime</th><th>Last seen</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <h2>CPU trend <span class="muted" id="node-trend-range"></span></h2>
+      <div id="node-trend-sparse-hint"></div>
+      <div class="chart-box">
+        <div id="node-trend-chart-error"></div>
+        <canvas id="node-trend-chart"></canvas>
+      </div>
+
+      <h2>Memory trend</h2>
+      <div class="chart-box">
+        <div id="node-memory-chart-error"></div>
+        <canvas id="node-memory-chart"></canvas>
+      </div>
+    </section>
+
+    <!-- ===== Tab 2: Applications ===== -->
+    <section id="tab-applications" class="tab-panel">
+      <h2>Status mix</h2>
+      <div id="status-mix" class="chip-row"></div>
+
+      <div class="filter-row">
+        <input type="search" id="app-search" placeholder="Search app name…">
+        <select id="app-status-filter"><option value="">All statuses</option></select>
+        <select id="app-source-type-filter"><option value="">All source types</option></select>
+        <select id="app-target-type-filter"><option value="">All target types</option></select>
+        <label class="field">
+          Lookback
+          <select id="apps-range">
+            <option value="1">Last 1 day</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </label>
+      </div>
+      <p class="hint">Source/target type is detected from StriimWatcher's LEE, OJet/Oracle-CDC, and data-warehouse-target metrics — StriimWatcher doesn't expose one clean adapter-type field, so "—" means not detected by any of those, not "none configured."</p>
+
+      <div class="table-wrap">
+        <table id="app-table">
+          <thead>
+            <tr>
+              <th>App name</th><th>Status</th><th>Source type</th><th>Target type</th>
+              <th>Backpressure</th><th>Checkpoint</th><th>Recovery</th><th>Total in</th>
+              <th>Total out</th><th>Last activity</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint">Click a row to open its status history in the History &amp; Trends tab.</p>
+    </section>
+
+    <!-- ===== Tab 3: History & Trends ===== -->
+    <section id="tab-history" class="tab-panel">
+      <div class="filter-row">
+        <label class="field">
+          App
+          <select id="history-app-select"></select>
+        </label>
+        <label class="field">
+          Range
+          <select id="history-range">
+            <option value="1">Last 1 day</option>
+            <option value="7" selected>Last 7 days</option>
+            <option value="30">Last 30 days</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="uptime-stat" class="stat-row"></div>
+
+      <h2>Status timeline</h2>
+      <div class="chart-box">
+        <div id="status-timeline-chart-error"></div>
+        <canvas id="status-timeline-chart"></canvas>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/nodeHealth.js"></script>
+<script src="/static/js/appSummary.js"></script>
+<script src="/static/js/appHistory.js"></script>
+<script src="/static/js/main.js"></script>
+{% endblock %}
